@@ -1,0 +1,6 @@
+{
+  "name": "CineVoice AI — Video Commentary Generator",
+  "description": "Generate natural, cohesive video commentary and scripts from your uploaded clips with seamless transitions and deep video analysis.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
