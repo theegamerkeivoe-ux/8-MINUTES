@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { VideoProject } from '../types';
 import { exportAsText, exportAsMarkdown, downloadFile, formatTime } from '../utils/exportHelpers';
+import { safeFetchJson } from '../utils/apiClient';
 
 interface FullScriptViewProps {
   project: VideoProject;
@@ -90,7 +91,7 @@ export const FullScriptView: React.FC<FullScriptViewProps> = ({
     // Call server Gemini TTS endpoint
     try {
       setIsGeneratingTTS(true);
-      const res = await fetch('/api/generate-tts', {
+      const data = await safeFetchJson('/api/generate-tts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -98,8 +99,6 @@ export const FullScriptView: React.FC<FullScriptViewProps> = ({
           voice: selectedVoice,
         }),
       });
-
-      const data = await res.json();
       if (data.audioData) {
         setTtsAudioUrl(data.audioData);
         const audio = new Audio(data.audioData);

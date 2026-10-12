@@ -81,9 +81,14 @@ export const Header: React.FC<HeaderProps> = ({
               8
             </div>
             <div className="hidden sm:block">
-              <span className="font-display font-extrabold text-base tracking-tight text-white block leading-none">
-                8 MINUTES
-              </span>
+              <div className="flex items-center gap-1.5">
+                <span className="font-display font-extrabold text-base tracking-tight text-white block leading-none">
+                  8 MINUTES
+                </span>
+                <span className="text-[9px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                  Free
+                </span>
+              </div>
               <span className="text-[10px] text-slate-400 font-medium tracking-wide uppercase mt-0.5 block">
                 Commentary Studio
               </span>

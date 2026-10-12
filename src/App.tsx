@@ -10,6 +10,7 @@ import { TeleprompterModal } from './components/TeleprompterModal';
 import { ProjectsModal } from './components/ProjectsModal';
 import { AlertCircle, CheckCircle2, Loader2, Sparkles, X } from 'lucide-react';
 import { exportAsText } from './utils/exportHelpers';
+import { safeFetchJson } from './utils/apiClient';
 
 const STORAGE_KEY = 'cinevoice_current_project';
 
@@ -81,7 +82,7 @@ export default function App() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(sanitized));
 
       // Also persist to server in the background
-      fetch('/api/projects', {
+      safeFetchJson('/api/projects', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ project: sanitized }),
@@ -315,17 +316,11 @@ export default function App() {
         })),
       };
 
-      const res = await fetch('/api/generate-commentary', {
+      const data = await safeFetchJson('/api/generate-commentary', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-
-      const data = await res.json();
-
-      if (!res.ok || data.error) {
-        throw new Error(data.error || 'Failed to generate commentary.');
-      }
 
       // Merge results into clips
       const commentaryMap = new Map<string, any>();
@@ -380,7 +375,7 @@ export default function App() {
     setErrorMessage(null);
 
     try {
-      const res = await fetch('/api/regenerate-clip', {
+      const data = await safeFetchJson('/api/regenerate-clip', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -398,9 +393,6 @@ export default function App() {
           customInstruction,
         }),
       });
-
-      const data = await res.json();
-      if (!res.ok || data.error) throw new Error(data.error || 'Failed to regenerate clip.');
 
       const updatedClips = project.clips.map((c) => {
         if (c.id === clipId) {
@@ -436,7 +428,7 @@ export default function App() {
     setErrorMessage(null);
 
     try {
-      const res = await fetch('/api/regenerate-transition', {
+      const data = await safeFetchJson('/api/regenerate-transition', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -455,9 +447,6 @@ export default function App() {
             : null,
         }),
       });
-
-      const data = await res.json();
-      if (!res.ok || data.error) throw new Error(data.error || 'Failed to regenerate transition.');
 
       const updatedClips = project.clips.map((c) => {
         if (c.id === clipId) {
@@ -487,7 +476,7 @@ export default function App() {
     setErrorMessage(null);
 
     try {
-      const res = await fetch('/api/resequence-transitions', {
+      const data = await safeFetchJson('/api/resequence-transitions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -495,9 +484,6 @@ export default function App() {
           clips: project.clips,
         }),
       });
-
-      const data = await res.json();
-      if (!res.ok || data.error) throw new Error(data.error || 'Failed to resequence transitions.');
 
       const transitionMap = new Map<string, string>();
       (data.transitions || []).forEach((t: any) => {
@@ -531,7 +517,7 @@ export default function App() {
     setErrorMessage(null);
 
     try {
-      const res = await fetch('/api/synthesize-full-script', {
+      const data = await safeFetchJson('/api/synthesize-full-script', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -541,9 +527,6 @@ export default function App() {
           clips: project.clips,
         }),
       });
-
-      const data = await res.json();
-      if (!res.ok || data.error) throw new Error(data.error || 'Failed to polish script.');
 
       const updated = {
         ...project,
@@ -574,8 +557,7 @@ export default function App() {
 
   const handleSelectProject = async (projectId: string) => {
     try {
-      const res = await fetch(`/api/projects/${projectId}`);
-      const data = await res.json();
+      const data = await safeFetchJson(`/api/projects/${projectId}`);
       if (data.project) {
         setProject(data.project);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(data.project));

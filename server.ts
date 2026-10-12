@@ -28,7 +28,7 @@ const ai = new GoogleGenAI({
 });
 
 // Ensure data persistence directory exists
-const DATA_DIR = path.join(__dirname, 'data');
+const DATA_DIR = process.env.VERCEL ? path.join('/tmp', 'data') : path.join(__dirname, 'data');
 if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
 }
@@ -54,13 +54,15 @@ function writeProjects(projects: any[]) {
   }
 }
 
+const apiRouter = express.Router();
+
 // Health check
-app.get('/api/health', (req, res) => {
+apiRouter.get('/health', (req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString() });
 });
 
 // Project persistence endpoints
-app.get('/api/projects', (req, res) => {
+apiRouter.get('/projects', (req, res) => {
   const projects = readProjects();
   // Strip huge frame arrays from summary list for fast response
   const summaries = projects.map(p => ({
@@ -76,7 +78,7 @@ app.get('/api/projects', (req, res) => {
   res.json({ projects: summaries });
 });
 
-app.get('/api/projects/:id', (req, res) => {
+apiRouter.get('/projects/:id', (req, res) => {
   const projects = readProjects();
   const project = projects.find(p => p.id === req.params.id);
   if (!project) {
@@ -85,7 +87,7 @@ app.get('/api/projects/:id', (req, res) => {
   res.json({ project });
 });
 
-app.post('/api/projects', (req, res) => {
+apiRouter.post('/projects', (req, res) => {
   try {
     const { project } = req.body;
     if (!project || !project.id) {
@@ -112,7 +114,7 @@ app.post('/api/projects', (req, res) => {
   }
 });
 
-app.delete('/api/projects/:id', (req, res) => {
+apiRouter.delete('/projects/:id', (req, res) => {
   const projects = readProjects();
   const filtered = projects.filter(p => p.id !== req.params.id);
   writeProjects(filtered);
@@ -142,7 +144,7 @@ function cleanBase64(dataUrl: string): { data: string; mimeType: string } {
  * AI-powered commentary generation for uploaded clips.
  * Handles single or multiple clips in smart sequential batches to preserve narrative arc and transitions.
  */
-app.post('/api/generate-commentary', async (req, res) => {
+apiRouter.post('/generate-commentary', async (req, res) => {
   try {
     const { topic, tone = 'engaging & natural', targetAudience = 'YouTube viewers', clips = [] } = req.body as {
       topic: string;
@@ -324,7 +326,7 @@ CRITICAL CREATOR STANDARDS:
 /**
  * Regenerate commentary for an individual clip while preserving overall video context.
  */
-app.post('/api/regenerate-clip', async (req, res) => {
+apiRouter.post('/regenerate-clip', async (req, res) => {
   try {
     const { topic, clip, previousClipCommentary, nextClipInfo, customInstruction } = req.body;
 
@@ -399,7 +401,7 @@ Create a seamless transition connecting this clip to the next clip.`;
 /**
  * Regenerate ONLY the transition between two clips without changing the commentary.
  */
-app.post('/api/regenerate-transition', async (req, res) => {
+apiRouter.post('/regenerate-transition', async (req, res) => {
   try {
     const { topic, currentClip, nextClip } = req.body;
 
@@ -447,7 +449,7 @@ Avoid clichés like "In the next clip" or "Moving on". Use natural connective re
 /**
  * Re-sequence transitions when clips are reordered or removed.
  */
-app.post('/api/resequence-transitions', async (req, res) => {
+apiRouter.post('/resequence-transitions', async (req, res) => {
   try {
     const { topic, clips } = req.body;
 
@@ -503,7 +505,7 @@ Ensure the final clip concludes gracefully without leading into another clip.`;
 /**
  * Synthesize polished continuous script for teleprompter and export
  */
-app.post('/api/synthesize-full-script', async (req, res) => {
+apiRouter.post('/synthesize-full-script', async (req, res) => {
   try {
     const { topic, hookIntro, outro, clips } = req.body;
 
@@ -542,7 +544,7 @@ Eliminate any awkward accidental repetitions between sections, smooth out pacing
 /**
  * Generate speech read-through using Gemini TTS (gemini-3.8-flash-lite-tts)
  */
-app.post('/api/generate-tts', async (req, res) => {
+apiRouter.post('/generate-tts', async (req, res) => {
   try {
     const { text, voice = 'Zephyr' } = req.body;
 
@@ -597,6 +599,10 @@ app.post('/api/generate-tts', async (req, res) => {
   }
 });
 
+// Mount API router under both /api and root to support Vercel serverless rewrites seamlessly
+app.use('/api', apiRouter);
+app.use(apiRouter);
+
 // Setup Vite dev server or static file serving
 async function startServer() {
   const isProduction = process.env.NODE_ENV === 'production';
@@ -625,7 +631,16 @@ async function startServer() {
   });
 }
 
-startServer().catch(err => {
-  console.error('Failed to start server:', err);
-  process.exit(1);
-});
+const isDirectExecution = process.argv[1] && (
+  process.argv[1].endsWith('server.ts') ||
+  process.argv[1].endsWith('server.js')
+);
+
+if (isDirectExecution && !process.env.VERCEL) {
+  startServer().catch(err => {
+    console.error('Failed to start server:', err);
+    process.exit(1);
+  });
+}
+
+export default app;

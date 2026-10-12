@@ -143,11 +143,13 @@ export const ClipUploadZone: React.FC<ClipUploadZoneProps> = ({
           : 'Upload clips for your commentary video. 8 MINUTES will analyze the action, connect the dots, and craft a continuous narration.'}
       </p>
 
-      <div className="flex items-center gap-3 text-[11px] text-slate-500">
+      <div className="flex flex-wrap items-center justify-center gap-3 text-[11px] text-slate-400">
+        <span className="font-semibold text-emerald-400">100% Free</span>
+        <span aria-hidden="true" className="text-slate-600">·</span>
         <span>MP4, MOV, WebM</span>
-        <span aria-hidden="true">·</span>
-        <span>Unlimited clips</span>
-        <span aria-hidden="true">·</span>
+        <span aria-hidden="true" className="text-slate-600">·</span>
+        <span>No paywalls or limits</span>
+        <span aria-hidden="true" className="text-slate-600">·</span>
         <span>Reorder anytime</span>
       </div>
     </div>

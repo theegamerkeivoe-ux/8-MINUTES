@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, FolderOpen, Trash2, Plus, Clock, Film, Loader2 } from 'lucide-react';
 import { VideoProject } from '../types';
+import { safeFetchJson } from '../utils/apiClient';
 
 interface ProjectsModalProps {
   isOpen: boolean;
@@ -31,8 +32,7 @@ export const ProjectsModal: React.FC<ProjectsModalProps> = ({
   const fetchProjects = async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/projects');
-      const data = await res.json();
+      const data = await safeFetchJson('/api/projects');
       if (Array.isArray(data.projects)) {
         setProjects(data.projects);
       }
@@ -53,7 +53,7 @@ export const ProjectsModal: React.FC<ProjectsModalProps> = ({
     e.stopPropagation();
     if (!confirm('Are you sure you want to delete this project?')) return;
     try {
-      await fetch(`/api/projects/${id}`, { method: 'DELETE' });
+      await safeFetchJson(`/api/projects/${id}`, { method: 'DELETE' });
       setProjects((prev) => prev.filter((p) => p.id !== id));
     } catch (err) {
       console.error('Failed to delete project:', err);
